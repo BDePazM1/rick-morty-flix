@@ -64,7 +64,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   display: flex;
   align-items: center;
   min-height: min(660px, 75vw);
-  padding: 60px 8.3% 95px;
+  padding: 132px 8.3% 95px;
   overflow: hidden;
   background-color: #152729;
   background-image: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2200&q=85');
@@ -201,7 +201,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .navbar nav a { font-size: 11px; }
   .logout-button { padding: 7px 8px; font-size: 10px; }
   .protected-content { padding-top: 64px; }
-  .hero-banner { min-height: 520px; padding: 45px 7% 90px; background-position: 58% center; }
+  .hero-banner { min-height: 520px; padding: 115px 7% 90px; background-position: 58% center; }
   .hero-shade { background: linear-gradient(90deg, rgba(8,13,16,.9), rgba(10,15,20,.48) 75%), linear-gradient(0deg, var(--background), transparent 45%); }
   .hero-content h1 { letter-spacing: -2px; }
   .hero-description { max-width: 380px; font-size: 13px; }

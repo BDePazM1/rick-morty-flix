@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { Character } from '../../core/models/character';
 import { Episode } from '../../core/models/episode';
 import { RickAndMortyService } from '../../core/services/rick-and-morty.service';
@@ -33,12 +33,12 @@ interface EpisodeRow {
         <div><p class="eyebrow">EXPLORA EL MULTIVERSO</p><h2>Episodios destacados</h2></div>
         <a class="text-link" routerLink="/episodes">Ver todos <span>›</span></a>
       </div>
-      @if (loading) {
+      @if (loading()) {
         <app-loader label="Cargando episodios y personajes..." />
-      } @else if (error) {
-        <div class="error-state" role="alert">{{ error }}</div>
+      } @else if (error()) {
+        <div class="error-state" role="alert">{{ error() }}</div>
       } @else {
-        @for (row of rows; track row.episode.id) {
+        @for (row of rows(); track row.episode.id) {
           <section class="episode-row">
             <div class="episode-row-heading">
               <a [routerLink]="['/episode', row.episode.id]"><span>{{ row.episode.episode }}</span> {{ row.episode.name }} <b>›</b></a>
@@ -56,36 +56,30 @@ interface EpisodeRow {
   `
 })
 export class HomeComponent implements OnInit {
-  rows: EpisodeRow[] = [];
-  loading = true;
-  error = '';
+  readonly rows = signal<EpisodeRow[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
 
   constructor(private readonly api: RickAndMortyService) {}
 
   ngOnInit(): void {
-    this.api.getEpisodes(1).subscribe({
-      next: (response) => {
-        const episodes = response.results;
+    this.api.getEpisodes(1).pipe(
+      switchMap(({ results: episodes }) =>
         forkJoin(episodes.map((episode) =>
           this.api.getCharactersByIds(this.api.idsFromUrls(episode.characters))
-        )).subscribe({
-          next: (charactersByEpisode) => {
-            this.rows = episodes.map((episode, index) => ({
-              episode,
-              characters: charactersByEpisode[index] ?? []
-            }));
-            this.loading = false;
-          },
-          error: () => {
-            this.error = 'No se pudieron cargar los personajes de los episodios. Inténtalo de nuevo más tarde.';
-            this.loading = false;
-          }
-        });
-      },
-      error: () => {
-        this.error = 'No se pudieron cargar los episodios. Comprueba tu conexión e inténtalo de nuevo.';
-        this.loading = false;
-      }
-    });
+        )).pipe(
+          map((charactersByEpisode) => episodes.map((episode, index) => ({
+            episode,
+            characters: charactersByEpisode[index] ?? []
+          })))
+        )
+      ),
+      catchError((error: unknown) => {
+        console.error('Error al cargar episodios y personajes:', error);
+        this.error.set('No se pudieron cargar los episodios y sus personajes. Comprueba tu conexión e inténtalo de nuevo.');
+        return of([]);
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe((rows) => this.rows.set(rows));
   }
 }
